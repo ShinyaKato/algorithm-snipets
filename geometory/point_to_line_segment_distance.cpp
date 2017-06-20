@@ -6,18 +6,6 @@ using namespace std;
 struct point { double x, y; };
 struct line { point p, q; };
 
-bool intersect(line l1, line l2) {
-  double ax = l1.p.x, ay = l1.p.y;
-  double bx = l1.q.x, by = l1.q.y;
-  double cx = l2.p.x, cy = l2.p.y;
-  double dx = l2.q.x, dy = l2.q.y;
-  double ta = (cx - dx) * (ay - cy) + (cy - dy) * (cx - ax);
-  double tb = (cx - dx) * (by - cy) + (cy - dy) * (cx - bx);
-  double tc = (ax - bx) * (cy - ay) + (ay - by) * (ax - cx);
-  double td = (ax - bx) * (dy - ay) + (ay - by) * (ax - dx);
-  return tc * td < 0 && ta * tb < 0;
-}
-
 double distance(line l, point p) {
   double x0 = p.x, y0 = p.y;
   double x1 = l.p.x, y1 = l.p.y;
