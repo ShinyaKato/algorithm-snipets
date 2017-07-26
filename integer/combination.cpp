@@ -1,9 +1,10 @@
 #include <iostream>
 using namespace std;
+typedef long long ll;
 
-long long combination(int n, int r) {
-  static long long comb[51][51];
-  long long &ret = comb[n][r];
+ll combination(int n, int r) {
+  static ll comb[51][51];
+  ll &ret = comb[n][r];
   if(ret != 0) return ret;
   if(n == 0 || r == 0) return ret = 1;
   if(n == r) return ret = 1;
