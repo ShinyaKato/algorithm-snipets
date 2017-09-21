@@ -1,44 +1,36 @@
-#include <iostream>
-#include <vector>
-#define REP(i, a, n) for(int i = ((int) a); i < ((int) n); i++)
+#include <bits/stdc++.h>
+#define REP(i, a, n) for(ll i = ((ll) a); i < ((ll) n); i++)
 using namespace std;
+typedef long long ll;
 
-/* 0-indexed */
-class BinaryIndexedTree {
-  vector<int> v;
+/* 1-indexed, [1, n] */
+template<typename T> class BinaryIndexedTree {
+  vector<T> vec;
+  const ll n;
 
 public:
-  BinaryIndexedTree(int n) {
-    REP(i, 0, n) v.push_back(0);
+  BinaryIndexedTree(T _n) : vec(_n + 1), n(_n) {}
+
+  T query(ll x) { /* query for [1, x] */
+    T ret = 0;
+    for(ll i = x; i > 0; i -= i & (-i)) ret += vec[i];
+    return ret;
   }
 
-  int query(int i) {
-    if(!(i + 1)) return 0;
-    return binop(v[i], query((i + 1) - ((i + 1) & -(i + 1)) - 1));
-  }
-
-  void update(int i, int n) {
-    if(i > v.size()) return;
-    v[i] = binop(v[i], n);
-    update((i + 1) + ((i + 1) & -(i + 1)) - 1, n);
-  }
-
-private:
-  int binop(int a, int b) {
-    return a + b;
+  void update(ll x, T k) { /* update for [1, x] */
+    for(ll i = x; i <= n; i += i & (-i)) vec[i] += k;
   }
 };
 
 int main(void) {
-  BinaryIndexedTree bit(5);      // [0, 0, 0, 0, 0]
-  bit.update(2, 2);              // [0, 0, 2, 0, 0]
-  cout << bit.query(1) << endl;  // 0
-  cout << bit.query(2) << endl;  // 2
-  bit.update(3, 5);              // [0, 0, 2, 5, 0]
-  cout << bit.query(3) << endl;  // 7
-  bit.update(0, 8);              // [8, 0, 2, 5, 0]
-  cout << bit.query(2) << endl;  // 10
-  cout << bit.query(4) << endl;  // 15
+  BinaryIndexedTree<ll> bit(5);
 
-  return 0;
+  bit.update(3, 2);              // [0, 0, 2, 0, 0]
+  cout << bit.query(2) << endl;  // 0
+  cout << bit.query(3) << endl;  // 2
+  bit.update(4, 5);              // [0, 0, 2, 5, 0]
+  cout << bit.query(4) << endl;  // 7
+  bit.update(1, 8);              // [8, 0, 2, 5, 0]
+  cout << bit.query(3) << endl;  // 10
+  cout << bit.query(5) << endl;  // 15
 }
