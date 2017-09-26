@@ -13,7 +13,7 @@ template<typename T> class SegmentTree {
 public:
   SegmentTree(ll _n, T _e, T (*_op)(T, T)) : e(_e), op(_op), n(1) {
     while(n < _n) n *= 2;
-    vec.resize(n, e);
+    vec.resize(n * 2 - 1, e);
   }
 
   T query(ll a) { // query for a-th value
