@@ -11,7 +11,7 @@ public:
 
   LowestCommonAncestor(ll vmax): vmax(vmax) {
     ll p = 1;
-    for(lmax = 0; p < vmax; lmax++) p *= 2;
+    for(lmax = 1; p < vmax; lmax++) p *= 2;
     edge = new vector<ll>[vmax];
     depth = new ll[vmax];
     parent = new ll*[lmax];
