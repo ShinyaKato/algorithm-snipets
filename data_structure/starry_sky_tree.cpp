@@ -39,5 +39,4 @@ public:
 int main(void) {
   StarrySkyTree starry(8);
   starry.add(0, 4, 1);
-  
 }
