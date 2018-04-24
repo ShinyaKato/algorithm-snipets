@@ -5,7 +5,7 @@ typedef long long ll;
 
 /* 1-indexed, [(1, 1), (m, n)] */
 template<typename T> class BinaryIndexedTree2D {
-  vector< vector<ll> > vec;
+  vector< vector<T> > vec;
   const ll m, n;
 
 public:
