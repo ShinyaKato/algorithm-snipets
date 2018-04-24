@@ -1,4 +1,4 @@
-#include <iostream>
+#include <bits/stdc++.h>
 #include <cmath>
 #define REP(i, a, n) for(int i = (a); i < (n); i++)
 using namespace std;
