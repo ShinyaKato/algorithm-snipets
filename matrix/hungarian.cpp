@@ -1,18 +1,14 @@
 #include <bits/stdc++.h>
 #define REP(i, a, n) for(ll i = ((ll) a); i < ((ll) n); i++)
-#define INF (1LL << 60)
 using namespace std;
 typedef long long ll;
 
-template <typename T>
-T hungarian(const vector< vector<T> > &a, ll n) {
+template <typename T> T hungarian(const vector< vector<T> > &a, ll n) {
+  const ll INF = 1LL << 60;
+  vector<ll> fx(n, INF), fy(n, 0), x(n, -1), y(n, -1);
   ll p, q;
-  vector<ll> fx(n, INF), fy(n, 0);
-  vector<ll> x(n, -1), y(n, -1);
 
-  REP(i, 0, n)
-    REP(j, 0, n)
-      fx[i] = max(fx[i], a[i][j]);
+  REP(i, 0, n) REP(j, 0, n) fx[i] = max(fx[i], a[i][j]);
 
   for(ll i = 0; i < n;) {
     vector<ll> t(n, -1), s(n + 1, i);
@@ -20,20 +16,16 @@ T hungarian(const vector< vector<T> > &a, ll n) {
       for(ll k = s[p], j = 0; j < n && x[i] < 0; j++) {
         if(fx[k] + fy[j] == a[k][j] && t[j] < 0) {
           s[++q] = y[j], t[j] = k;
-          if(s[q] < 0)
-            for(p = j; p >= 0; j = p)
-              y[j] = k = t[j], p = x[k], x[k] = j;
+          if(s[q] < 0) for(p = j; p >= 0; j = p) y[j] = k = t[j], p = x[k], x[k] = j;
         }
       }
     }
     if(x[i] < 0) {
       T d = INF;
-      for(ll k = 0; k <= q; k++)
-        for(ll j = 0; j < n; j++)
-          if(t[j] < 0) d = min(d, fx[s[k]] + fy[j] - a[s[k]][j]);
-      for(ll j = 0; j < n; j++) fy[j] += (t[j] < 0 ? 0 : d);
-      for(ll k = 0; k <= q; k++) fx[s[k]] -= d;
-    } else ++i;
+      REP(k, 0, q + 1) REP(j, 0, n) if(t[j] < 0) d = min(d, fx[s[k]] + fy[j] - a[s[k]][j]);
+      REP(j, 0, n) fy[j] += (t[j] < 0 ? 0 : d);
+      REP(k, 0, q + 1) fx[s[k]] -= d;
+    } else i++;
   }
 
   T ret = 0;
