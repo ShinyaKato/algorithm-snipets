@@ -43,9 +43,6 @@ T hungarian(const vector< vector<T> > &a, ll n) {
 }
 
 int main(void) {
-  vector< vector<ll> > a(3, vector<ll>(3));
-  a[0][0] = 5; a[0][1] = 3; a[0][2] = 8;
-  a[1][0] = 3; a[1][1] = 2; a[1][2] = 4;
-  a[2][0] = 7; a[2][1] = 9; a[2][2] = 5;
-  cout << hungarian<ll>(a, 3) << endl; // 20
+  vector< vector<ll> > a = { { 5, 3, 8 }, { 3, 2, 4 }, { 7, 9, 5 } };
+  assert(hungarian<ll>(a, 3) == 20);
 }
