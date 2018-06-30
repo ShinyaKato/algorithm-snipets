@@ -1,3 +1,61 @@
+/* index
+ *
+ * data_structure
+ *   binary_indexed_tree.cpp
+ *   binary_indexed_tree_2d.cpp
+ *   segment_tree/src.cpp
+ *   lazy_segment_tree.cpp
+ *   starry_sky_tree.cpp
+ *   convex_hull_trick.cpp
+ *
+ * disjoint_set
+ *   union_find.cpp
+ *
+ * dynamic_programming
+ *   least_increasing_subsequence_pair.cpp
+ *   monotone_minima.cpp
+ *
+ * geometory
+ *   geometry.cpp
+ *   3d.cpp
+ *   point_to_line_segment_distance_3d.cpp
+ *
+ * graph
+ *   bellmanford.cpp
+ *   dijkstra.cpp
+ *   max_flow.cpp
+ *   min_cost_flow.cpp
+ *   lowest_common_ancestor.cpp
+ *   strongly_connected_component.cpp
+ *   centroid.cpp
+ *   centroid_decomposition.cpp
+ *
+ * integer
+ *   modulo_inverse.cpp
+ *   modulo_power.cpp
+ *   modulo_combination.cpp
+ *   combination.cpp
+ *   matrix_poewr.cpp
+ *   modint.cpp
+ *   rational.cpp
+ *   modratio.cpp
+ *   next_combination.cpp
+ *   next_pertial_permutation.cpp
+ *
+ * math
+ *   dice.cpp
+ *
+ * matrix
+ *   hungarian.cpp
+ *
+ * string
+ *   split.cpp
+ *   suffix_array.cpp
+ *   aho_corasick.cpp
+ *   rolling_hash.cpp
+ *
+ */
+
 /******************************************/
 /* data_structure/binary_indexed_tree.cpp */
 /******************************************/
@@ -48,55 +106,61 @@ public:
   }
 };
 
-/****************************************/
-/* data_structure/convex_hull_trick.cpp */
-/****************************************/
+/***************************************/
+/* data_structure/segment_tree/src.cpp */
+/***************************************/
 
-class ConvexHullTrick {
-  vector<pll> deq;
-  ll s, t;
-
+/* 0-indexed, [0, n)
+ *
+ * requirements: let a, b, c in T
+ *   op(op(a, b), c) = op(a, op(b, c))
+ *   op(a, e) = op(e, a) = e
+ */
+template<typename T, typename E> class SegmentTree {
 public:
-  ConvexHullTrick(ll n) { /* n: number of lines */
-    deq.resize(n);
-    s = 0, t = 0;
+  typedef function<T (T, T)> Operator;
+  typedef function<T (T, E)> Apply;
+
+  vector<T> data;
+  ll n;        // size of elements (2^x alignment)
+  T e;         // identity of monoid
+  Operator op; // binary operator of monoid
+  Apply apply; // apply effect to monoid
+
+  // construct with size of elements
+  SegmentTree(ll _n, T e, Operator op, Apply apply): e(e), op(op), apply(apply) {
+    for(n = 1; n < _n; n *= 2);
+    data.resize(n * 2 - 1, e);
   }
 
-  void add(ll a, ll b) { /* a must decrease monotonously */
-    const pll p(a, b);
-    while(s + 1 < t && check(deq[t - 2], deq[t - 1], p)) t--;
-    deq[t++] = p;
+  // construct with initial values
+  SegmentTree(const vector<T> &vec, T e, Operator op, Apply apply): e(e), op(op), apply(apply) {
+    for(n = 1; n < vec.size(); n *= 2);
+    data.resize(n * 2 - 1, e);
+    REP(i, 0, vec.size()) data[i + n - 1] = vec[i];
+    for(ll i = n - 2; i >= 0; i--) data[i] = op(data[i * 2 + 1], data[i * 2 + 2]);
   }
 
-  ll query(ll x) { /* O(log n) */
-    ll low = s - 1, high = t - 1;
-    while(low + 1 < high) {
-      ll mid = (low + high) / 2;
-      if(isright(deq[mid], deq[mid + 1], x)) low = mid;
-      else high = mid;
+  // query for [a, b)
+  T query(ll a, ll b) { return query(a, b, 0, 0, n); }
+  T query(ll a, ll b, ll k, ll l, ll r) {
+    if(r <= a || b <= l) return e;
+    if(a <= l && r <= b) return data[k];
+    T vl = query(a, b, k * 2 + 1, l, (l + r) / 2);
+    T vr = query(a, b, k * 2 + 2, (l + r) / 2, r);
+    return op(vl, vr);
+  }
+
+  // update value at k
+  void update(ll k, E x) {
+    k += n - 1;
+    data[k] = apply(data[k], x);
+    while(k > 0) {
+      k = (k - 1) / 2;
+      data[k] = op(data[k * 2 + 1], data[k * 2 + 2]);
     }
-    return f(deq[high], x);
-  }
-
-private:
-  bool isright(const pll &p1, const pll &p2, ll x) {
-    return (p1.second - p2.second) >= x * (p2.first - p1.first);
-  }
-
-  bool check(const pll &p1, const pll &p2, const pll &p3) {
-    return (p2.first - p1.first) * (p3.second - p2.second) >= (p2.second - p1.second) * (p3.first - p2.first);
-  }
-
-  ll f(const pll &p, ll x) {
-    return p.first * x + p.second;
   }
 };
-
-void test(ll N, ll *A, ll *B, ll *V) {
-  ConvexHullTrick cht(N);
-  REP(i, 0, N) cht.add(A[i], B[i]);
-  REP(i, 0, N) assert(cht.query(i) == V[i]);
-}
 
 /****************************************/
 /* data_structure/lazy_segment_tree.cpp */
@@ -184,62 +248,6 @@ public:
   }
 };
 
-/***************************************/
-/* data_structure/segment_tree/src.cpp */
-/***************************************/
-
-/* 0-indexed, [0, n)
- *
- * requirements: let a, b, c in T
- *   op(op(a, b), c) = op(a, op(b, c))
- *   op(a, e) = op(e, a) = e
- */
-template<typename T, typename E> class SegmentTree {
-public:
-  typedef function<T (T, T)> Operator;
-  typedef function<T (T, E)> Apply;
-
-  vector<T> data;
-  ll n;        // size of elements (2^x alignment)
-  T e;         // identity of monoid
-  Operator op; // binary operator of monoid
-  Apply apply; // apply effect to monoid
-
-  // construct with size of elements
-  SegmentTree(ll _n, T e, Operator op, Apply apply): e(e), op(op), apply(apply) {
-    for(n = 1; n < _n; n *= 2);
-    data.resize(n * 2 - 1, e);
-  }
-
-  // construct with initial values
-  SegmentTree(const vector<T> &vec, T e, Operator op, Apply apply): e(e), op(op), apply(apply) {
-    for(n = 1; n < vec.size(); n *= 2);
-    data.resize(n * 2 - 1, e);
-    REP(i, 0, vec.size()) data[i + n - 1] = vec[i];
-    for(ll i = n - 2; i >= 0; i--) data[i] = op(data[i * 2 + 1], data[i * 2 + 2]);
-  }
-
-  // query for [a, b)
-  T query(ll a, ll b) { return query(a, b, 0, 0, n); }
-  T query(ll a, ll b, ll k, ll l, ll r) {
-    if(r <= a || b <= l) return e;
-    if(a <= l && r <= b) return data[k];
-    T vl = query(a, b, k * 2 + 1, l, (l + r) / 2);
-    T vr = query(a, b, k * 2 + 2, (l + r) / 2, r);
-    return op(vl, vr);
-  }
-
-  // update value at k
-  void update(ll k, E x) {
-    k += n - 1;
-    data[k] = apply(data[k], x);
-    while(k > 0) {
-      k = (k - 1) / 2;
-      data[k] = op(data[k * 2 + 1], data[k * 2 + 2]);
-    }
-  }
-};
-
 /**************************************/
 /* data_structure/starry_sky_tree.cpp */
 /**************************************/
@@ -278,8 +286,52 @@ public:
   }
 };
 
+/****************************************/
+/* data_structure/convex_hull_trick.cpp */
+/****************************************/
+
+class ConvexHullTrick {
+  vector<pll> deq;
+  ll s, t;
+
+public:
+  ConvexHullTrick(ll n) { /* n: number of lines */
+    deq.resize(n);
+    s = 0, t = 0;
+  }
+
+  void add(ll a, ll b) { /* a must decrease monotonously */
+    const pll p(a, b);
+    while(s + 1 < t && check(deq[t - 2], deq[t - 1], p)) t--;
+    deq[t++] = p;
+  }
+
+  ll query(ll x) { /* O(log n) */
+    ll low = s - 1, high = t - 1;
+    while(low + 1 < high) {
+      ll mid = (low + high) / 2;
+      if(isright(deq[mid], deq[mid + 1], x)) low = mid;
+      else high = mid;
+    }
+    return f(deq[high], x);
+  }
+
+private:
+  bool isright(const pll &p1, const pll &p2, ll x) {
+    return (p1.second - p2.second) >= x * (p2.first - p1.first);
+  }
+
+  bool check(const pll &p1, const pll &p2, const pll &p3) {
+    return (p2.first - p1.first) * (p3.second - p2.second) >= (p2.second - p1.second) * (p3.first - p2.first);
+  }
+
+  ll f(const pll &p, ll x) {
+    return p.first * x + p.second;
+  }
+};
+
 /***********************************/
-/* disjoint_set/union_find/src.cpp */
+/* disjoint_set/union_find.cpp */
 /***********************************/
 
 class UnionFind {
@@ -342,74 +394,6 @@ void dfs(ll il, ll ir, ll jl, ll jr, function<ll(ll, ll)> &f, vector<ll> &ans) {
 
   dfs(il, im, jl, jm + 1, f, ans);
   dfs(im + 1, ir, jm, jr, f, ans);
-}
-
-/********************/
-/* geometory/3d.cpp */
-/********************/
-
-class Vector3 {
-public:
-  double x, y, z;
-
-  Vector3(): x(0), y(0), z(0) {}
-  Vector3(double x, double y, double z): x(x), y(y), z(z) {}
-
-  Vector3 operator+(Vector3 p) { return Vector3(x + p.x, y + p.y, z + p.z); }
-  Vector3 operator-(Vector3 p) { return Vector3(x - p.x, y - p.y, z - p.z); }
-
-  Vector3 operator*(double t) { return Vector3(x * t, y * t, z * t); }
-  Vector3 operator/(double t) { return Vector3(x / t, y / t, z / t); }
-
-  double dot(Vector3 p) { return x * p.x + y * p.y + z * p.z; }
-  Vector3 det(Vector3 p) { return Vector3(y * p.z - z * p.y, z * p.x - x * p.z, x * p.y - y * p.x); }
-
-  double norm2() { return x * x + y * y + z * z; }
-  double norm() { return sqrt(norm2()); }
-
-  Vector3 normalize() { return Vector3(x / norm(), y / norm(), z / norm()); }
-
-  friend ostream& operator<<(ostream &out, const Vector3 &v) {
-    out << "(" << v.x << ", " << v.y << ", " << v.z << ")";
-  }
-};
-
-class Quaternion {
-public:
-  Vector3 v;
-  double w;
-
-  Quaternion(): v(0, 0, 0), w(0) {}
-  Quaternion(Vector3 v): v(v), w(0) {}
-  Quaternion(Vector3 v, double w): v(v), w(w) {}
-  Quaternion(double x, double y, double z, double w): v(x, y, z), w(w) {}
-
-  Quaternion operator+(Quaternion q) { return Quaternion(v + q.v, w + q.w); }
-  Quaternion operator-(Quaternion q) { return Quaternion(v - q.v, w - q.w); }
-
-  Quaternion operator*(double t) { return Quaternion(v * t, w * t); }
-  Quaternion operator/(double t) { return Quaternion(v / t, w / t); }
-
-  Quaternion operator*(Quaternion q) { return Quaternion(v.det(q.v) + q.v * w + v * q.w, w * q.w - v.dot(q.v)); }
-
-  double norm2() { return v.norm2() + w * w; }
-  double norm() { return sqrt(norm2()); }
-
-  Quaternion conjugation() { return Quaternion(v * -1, w); }
-  Quaternion inverse() { return conjugation() / norm2(); }
-
-  friend ostream& operator<<(ostream &out, const Quaternion &q) {
-    out << "(" << q.v << ", " << q.w << ")";
-  }
-};
-
-Vector3 rotate(Vector3 v, Vector3 u, double theta) {
-  Quaternion q1(u * sin(theta / 2), cos(theta / 2));
-  Quaternion q2 = q1.inverse();
-  Quaternion p(v);
-  Quaternion t = q1 * p * q2;
-
-  return t.v;
 }
 
 /**************************/
@@ -516,6 +500,74 @@ vector<Point2> convex_hull(vector<Point2> ps) {
   return qs;
 }
 
+/********************/
+/* geometory/3d.cpp */
+/********************/
+
+class Vector3 {
+public:
+  double x, y, z;
+
+  Vector3(): x(0), y(0), z(0) {}
+  Vector3(double x, double y, double z): x(x), y(y), z(z) {}
+
+  Vector3 operator+(Vector3 p) { return Vector3(x + p.x, y + p.y, z + p.z); }
+  Vector3 operator-(Vector3 p) { return Vector3(x - p.x, y - p.y, z - p.z); }
+
+  Vector3 operator*(double t) { return Vector3(x * t, y * t, z * t); }
+  Vector3 operator/(double t) { return Vector3(x / t, y / t, z / t); }
+
+  double dot(Vector3 p) { return x * p.x + y * p.y + z * p.z; }
+  Vector3 det(Vector3 p) { return Vector3(y * p.z - z * p.y, z * p.x - x * p.z, x * p.y - y * p.x); }
+
+  double norm2() { return x * x + y * y + z * z; }
+  double norm() { return sqrt(norm2()); }
+
+  Vector3 normalize() { return Vector3(x / norm(), y / norm(), z / norm()); }
+
+  friend ostream& operator<<(ostream &out, const Vector3 &v) {
+    out << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+  }
+};
+
+class Quaternion {
+public:
+  Vector3 v;
+  double w;
+
+  Quaternion(): v(0, 0, 0), w(0) {}
+  Quaternion(Vector3 v): v(v), w(0) {}
+  Quaternion(Vector3 v, double w): v(v), w(w) {}
+  Quaternion(double x, double y, double z, double w): v(x, y, z), w(w) {}
+
+  Quaternion operator+(Quaternion q) { return Quaternion(v + q.v, w + q.w); }
+  Quaternion operator-(Quaternion q) { return Quaternion(v - q.v, w - q.w); }
+
+  Quaternion operator*(double t) { return Quaternion(v * t, w * t); }
+  Quaternion operator/(double t) { return Quaternion(v / t, w / t); }
+
+  Quaternion operator*(Quaternion q) { return Quaternion(v.det(q.v) + q.v * w + v * q.w, w * q.w - v.dot(q.v)); }
+
+  double norm2() { return v.norm2() + w * w; }
+  double norm() { return sqrt(norm2()); }
+
+  Quaternion conjugation() { return Quaternion(v * -1, w); }
+  Quaternion inverse() { return conjugation() / norm2(); }
+
+  friend ostream& operator<<(ostream &out, const Quaternion &q) {
+    out << "(" << q.v << ", " << q.w << ")";
+  }
+};
+
+Vector3 rotate(Vector3 v, Vector3 u, double theta) {
+  Quaternion q1(u * sin(theta / 2), cos(theta / 2));
+  Quaternion q2 = q1.inverse();
+  Quaternion p(v);
+  Quaternion t = q1 * p * q2;
+
+  return t.v;
+}
+
 /***************************************************/
 /* geometory/point_to_line_segment_distance_3d.cpp */
 /***************************************************/
@@ -581,96 +633,6 @@ bool find_negative_loop(vector< vector<edge> > &E) {
 }
 
 /**********************/
-/* graph/centroid.cpp */
-/**********************/
-
-vector<ll> centroid(vector< vector<ll> > &E) {
-  ll N = E.size();
-  vector<ll> cnt(N);
-  vector<ll> c;
-  function<void (ll, ll)> dfs = [&](ll v, ll p) {
-    bool ok = true;
-    cnt[v] = 1;
-    for(ll u : E[v]) if(u != p) {
-      dfs(u, v);
-      ok = ok && (cnt[u] <= N / 2);
-      cnt[v] += cnt[u];
-    }
-    ok = ok && (N - cnt[v] <= N / 2);
-    if(ok) c.push_back(v);
-  };
-  dfs(0, -1);
-  return c;
-}
-
-vector<ll> centroid_with_dead(vector< vector<ll> > &E, ll v, vector<bool> &dead) {
-  function<ll (ll, ll)> subtree_size = [&](ll v, ll p) {
-    ll sum = 1;
-    for(ll u : E[v]) if(u != p && !dead[u]) sum += subtree_size(u, v);
-    return sum;
-  };
-  ll N = subtree_size(v, -1);
-  vector<ll> cnt(E.size());
-  vector<ll> c;
-  function<void (ll, ll)> dfs = [&](ll v, ll p) {
-    bool ok = true;
-    cnt[v] = 1;
-    for(ll u : E[v]) if(u != p && !dead[u]) {
-      dfs(u, v);
-      ok = ok && (cnt[u] <= N / 2);
-      cnt[v] += cnt[u];
-    }
-    ok = ok && (N - cnt[v] <= N / 2);
-    if(ok) c.push_back(v);
-  };
-  dfs(v, -1);
-  return c;
-}
-
-/************************************/
-/* graph/centroid_decomposition.cpp */
-/************************************/
-
-struct edge {
-  ll to;
-  /* add other attributes of a edge. */
-};
-typedef vector< vector<edge> > graph;
-
-ll tree_size(ll v, ll p, graph &E, vector<bool> &dead) {
-  ll sum = 1;
-  for(edge e : E[v]) if(e.to != p && !dead[e.to]) sum += tree_size(e.to, v, E, dead);
-  return sum;
-};
-
-pll centroid(ll v, ll p, ll n, graph &E, vector<bool> &dead) {
-  bool ok = true;
-  ll cnt = 1;
-  for(edge e : E[v]) if(e.to != p && !dead[e.to]) {
-    pll r = centroid(e.to, v, n, E, dead);
-    if(r.first >= 0) return r;
-    ok = ok && (r.second <= n / 2);
-    cnt += r.second;
-  }
-  ok = ok && (n - cnt <= n / 2);
-  return pll(ok ? v : -1, cnt);
-};
-
-/* template of centroid decomposition */
-void subtree(ll v, graph &E, vector<bool> &dead) {
-  ll n = tree_size(v, -1, E, dead);
-  ll c = centroid(v, -1, n, E, dead).first;
-  dead[c] = true;
-
-  for(edge e : E[c]) if(!dead[e.to]) subtree(e.to, E, dead);
-
-  /* compute something about whole of the tree. */
-  /* compute something using result of subtrees decomposited by centroid. */
-
-  dead[c] = false;
-}
-
-/**********************/
 /* graph/dijkstra.cpp */
 /**********************/
 
@@ -713,50 +675,6 @@ public:
       }
     }
     return dp;
-  }
-};
-
-/************************************/
-/* graph/lowest_common_ancestor.cpp */
-/************************************/
-
-class LowestCommonAncestor {
-public:
-  ll vmax, lmax, *depth, **parent;
-  vector<ll> *edge;
-
-  LowestCommonAncestor(ll vmax): vmax(vmax) {
-    ll p = 1;
-    for(lmax = 1; p < vmax; lmax++) p *= 2;
-    edge = new vector<ll>[vmax];
-    depth = new ll[vmax];
-    parent = new ll*[lmax];
-    REP(i, 0, lmax) parent[i] = new ll[vmax];
-  }
-
-  void init(ll root) {
-    dfs(root, -1, 0);
-    REP(i, 0, lmax - 1) REP(j, 0, vmax) {
-      parent[i + 1][j] = parent[i][j] >= 0 ? parent[i][parent[i][j]] : -1;
-    }
-  }
-
-  ll query(ll u, ll v) {
-    if(depth[u] > depth[v]) swap(u, v);
-    REP(i, 0, lmax) if(((depth[v] - depth[u]) >> i) & 1) v = parent[i][v];
-    if(u == v) return u;
-    for(ll i = lmax - 1; i >= 0; i--) if(parent[i][u] != parent[i][v]) {
-      u = parent[i][u];
-      v = parent[i][v];
-    }
-    return parent[0][u];
-  }
-
-private:
-  void dfs(ll v, ll p, ll d) {
-    parent[0][v] = p;
-    depth[v] = d;
-    REP(i, 0, edge[v].size()) if(edge[v][i] != p) dfs(edge[v][i], v, d + 1);
   }
 };
 
@@ -873,6 +791,50 @@ public:
   }
 };
 
+/************************************/
+/* graph/lowest_common_ancestor.cpp */
+/************************************/
+
+class LowestCommonAncestor {
+public:
+  ll vmax, lmax, *depth, **parent;
+  vector<ll> *edge;
+
+  LowestCommonAncestor(ll vmax): vmax(vmax) {
+    ll p = 1;
+    for(lmax = 1; p < vmax; lmax++) p *= 2;
+    edge = new vector<ll>[vmax];
+    depth = new ll[vmax];
+    parent = new ll*[lmax];
+    REP(i, 0, lmax) parent[i] = new ll[vmax];
+  }
+
+  void init(ll root) {
+    dfs(root, -1, 0);
+    REP(i, 0, lmax - 1) REP(j, 0, vmax) {
+      parent[i + 1][j] = parent[i][j] >= 0 ? parent[i][parent[i][j]] : -1;
+    }
+  }
+
+  ll query(ll u, ll v) {
+    if(depth[u] > depth[v]) swap(u, v);
+    REP(i, 0, lmax) if(((depth[v] - depth[u]) >> i) & 1) v = parent[i][v];
+    if(u == v) return u;
+    for(ll i = lmax - 1; i >= 0; i--) if(parent[i][u] != parent[i][v]) {
+      u = parent[i][u];
+      v = parent[i][v];
+    }
+    return parent[0][u];
+  }
+
+private:
+  void dfs(ll v, ll p, ll d) {
+    parent[0][v] = p;
+    depth[v] = d;
+    REP(i, 0, edge[v].size()) if(edge[v][i] != p) dfs(edge[v][i], v, d + 1);
+  }
+};
+
 /******************************************/
 /* graph/strongly_connected_component.cpp */
 /******************************************/
@@ -915,6 +877,120 @@ private:
   }
 };
 
+/**********************/
+/* graph/centroid.cpp */
+/**********************/
+
+vector<ll> centroid(vector< vector<ll> > &E) {
+  ll N = E.size();
+  vector<ll> cnt(N);
+  vector<ll> c;
+  function<void (ll, ll)> dfs = [&](ll v, ll p) {
+    bool ok = true;
+    cnt[v] = 1;
+    for(ll u : E[v]) if(u != p) {
+      dfs(u, v);
+      ok = ok && (cnt[u] <= N / 2);
+      cnt[v] += cnt[u];
+    }
+    ok = ok && (N - cnt[v] <= N / 2);
+    if(ok) c.push_back(v);
+  };
+  dfs(0, -1);
+  return c;
+}
+
+vector<ll> centroid_with_dead(vector< vector<ll> > &E, ll v, vector<bool> &dead) {
+  function<ll (ll, ll)> subtree_size = [&](ll v, ll p) {
+    ll sum = 1;
+    for(ll u : E[v]) if(u != p && !dead[u]) sum += subtree_size(u, v);
+    return sum;
+  };
+  ll N = subtree_size(v, -1);
+  vector<ll> cnt(E.size());
+  vector<ll> c;
+  function<void (ll, ll)> dfs = [&](ll v, ll p) {
+    bool ok = true;
+    cnt[v] = 1;
+    for(ll u : E[v]) if(u != p && !dead[u]) {
+      dfs(u, v);
+      ok = ok && (cnt[u] <= N / 2);
+      cnt[v] += cnt[u];
+    }
+    ok = ok && (N - cnt[v] <= N / 2);
+    if(ok) c.push_back(v);
+  };
+  dfs(v, -1);
+  return c;
+}
+
+/************************************/
+/* graph/centroid_decomposition.cpp */
+/************************************/
+
+struct edge {
+  ll to;
+  /* add other attributes of a edge. */
+};
+typedef vector< vector<edge> > graph;
+
+ll tree_size(ll v, ll p, graph &E, vector<bool> &dead) {
+  ll sum = 1;
+  for(edge e : E[v]) if(e.to != p && !dead[e.to]) sum += tree_size(e.to, v, E, dead);
+  return sum;
+};
+
+pll centroid(ll v, ll p, ll n, graph &E, vector<bool> &dead) {
+  bool ok = true;
+  ll cnt = 1;
+  for(edge e : E[v]) if(e.to != p && !dead[e.to]) {
+    pll r = centroid(e.to, v, n, E, dead);
+    if(r.first >= 0) return r;
+    ok = ok && (r.second <= n / 2);
+    cnt += r.second;
+  }
+  ok = ok && (n - cnt <= n / 2);
+  return pll(ok ? v : -1, cnt);
+};
+
+/* template of centroid decomposition */
+void subtree(ll v, graph &E, vector<bool> &dead) {
+  ll n = tree_size(v, -1, E, dead);
+  ll c = centroid(v, -1, n, E, dead).first;
+  dead[c] = true;
+
+  for(edge e : E[c]) if(!dead[e.to]) subtree(e.to, E, dead);
+
+  /* compute something about whole of the tree. */
+  /* compute something using result of subtrees decomposited by centroid. */
+
+  dead[c] = false;
+}
+
+/******************************/
+/* integer/modulo_inverse.cpp */
+/******************************/
+
+ll modulo_inverse(ll n) {
+  ll t = MOD - 2, p = 1, q = n;
+  while(t > 0) {
+    if(t % 2) p = (p * q) % MOD;
+    q = (q * q) % MOD;
+    t /= 2;
+  }
+  return p % MOD;
+}
+
+/****************************/
+/* integer/modulo_power.cpp */
+/****************************/
+
+ll modulo_power(ll a, ll n) {
+  if(n == 0) return 1;
+  if(n % 2 == 0) return modulo_power((a * a) % MOD, n / 2);
+  return (a * modulo_power(a, n - 1)) % MOD;
+}
+
 /***************************/
 /* integer/combination.cpp */
 /***************************/
@@ -928,6 +1004,32 @@ ll combination(int n, int r) {
   if(r == 1) return ret = n;
   return ret = combination(n - 1, r - 1) + combination(n - 1, r);
 }
+
+/**********************************/
+/* integer/modulo_combination.cpp */
+/**********************************/
+
+class ModuloCombination {
+private:
+  vector<ll> fact, fact_inv;
+
+  static ll mod_pow(ll a, ll n) {
+    if(n == 0) return 1;
+    if(n % 2 == 0) return mod_pow((a * a) % MOD, n / 2);
+    return (a * mod_pow(a, n - 1)) % MOD;
+  }
+
+public:
+  ModuloCombination(ll N): fact(N + 1), fact_inv(N + 1) {
+    fact[0] = 1;
+    REP(i, 1, N + 1) fact[i] = (i * fact[i - 1]) % MOD;
+    REP(i, 0, N + 1) fact_inv[i] = mod_pow(fact[i], MOD - 2);
+  }
+
+  ll operator()(ll n, ll r) {
+    return fact[n] * fact_inv[r] % MOD * fact_inv[n - r] % MOD;
+  }
+};
 
 /****************************/
 /* integer/matrix_poewr.cpp */
@@ -990,6 +1092,48 @@ public:
 };
 
 /************************/
+/* integer/rational.cpp */
+/************************/
+
+class rational {
+  ll n, d;
+
+  static ll gcd(ll a, ll b) { return b != 0 ? gcd(b, a % b) : a; }
+
+public:
+  rational(): n(0), d(1) {}
+  rational(ll _n): n(_n), d(1) {}
+  rational(ll _n, ll _d) {
+    assert(_d != 0);
+    ll g = gcd(abs(_n), abs(_d));
+    n = _n / g * (_d / abs(_d));
+    d = abs(_d) / g;
+  }
+
+  bool operator==(rational r) const { return n * r.d == d * r.n; }
+  bool operator!=(rational r) const { return !(*this == r); }
+  bool operator<(rational r) const { return n * r.d < d * r.n; }
+  bool operator>(rational r) const { return n * r.d > d * r.n; }
+  bool operator<=(rational r) const { return *this == r || *this < r; }
+  bool operator>=(rational r) const { return *this == r || *this > r; }
+
+  rational operator+(rational r) const { return rational(n * r.d + d * r.n, d * r.d); }
+  rational operator-(rational r) const { return rational(n * r.d - d * r.n, d * r.d); }
+  rational operator*(rational r) const { return rational(n * r.n, d * r.d); }
+  rational operator/(rational r) const { return rational(n * r.d, d * r.n); }
+
+  rational operator+=(const rational &r) { return *this = *this + r; }
+  rational operator-=(const rational &r) { return *this = *this - r; }
+  rational operator*=(const rational &r) { return *this = *this * r; }
+  rational operator/=(const rational &r) { return *this = *this / r; }
+
+  explicit operator double() const { return (double) n / d; }
+
+  ll num() const { return n; }
+  ll den() const { return d; }
+};
+
+/************************/
 /* integer/modratio.cpp */
 /************************/
 
@@ -1017,98 +1161,6 @@ public:
       t /= 2;
     }
     return n * (p % MOD) % MOD;
-  }
-};
-
-/**********************************/
-/* integer/modulo_combination.cpp */
-/**********************************/
-
-class ModuloCombination {
-private:
-  vector<ll> fact, fact_inv;
-
-  static ll mod_pow(ll a, ll n) {
-    if(n == 0) return 1;
-    if(n % 2 == 0) return mod_pow((a * a) % MOD, n / 2);
-    return (a * mod_pow(a, n - 1)) % MOD;
-  }
-
-public:
-  ModuloCombination(ll N): fact(N + 1), fact_inv(N + 1) {
-    fact[0] = 1;
-    REP(i, 1, N + 1) fact[i] = (i * fact[i - 1]) % MOD;
-    REP(i, 0, N + 1) fact_inv[i] = mod_pow(fact[i], MOD - 2);
-  }
-
-  ll operator()(ll n, ll r) {
-    return fact[n] * fact_inv[r] % MOD * fact_inv[n - r] % MOD;
-  }
-};
-
-/*******************************/
-/* integer/modulo_fact_emb.cpp */
-/*******************************/
-
-void modulo_fact_emb_gen() { /* generate numbers for embed */
-  const ll width = 10000000LL;
-  ll p = 1;
-  cout << "{ 1LL";
-  REP(i, 1, MOD + 1) {
-    (p *= i) %= MOD;
-    if(i % width == 0) cout << ", " << p << "LL";
-  }
-  cout << " }" << endl;
-}
-
-ll modulo_fact_emb(ll n) { /* calculate n! % 1e9+7 */
-  const ll width = 10000000LL;
-  ll p[] = { 1LL, 682498929LL, 491101308LL, 76479948LL, 723816384LL, 67347853LL, 27368307LL, 625544428LL, 199888908LL, 888050723LL, 927880474LL, 281863274LL, 661224977LL, 623534362LL, 970055531LL, 261384175LL, 195888993LL, 66404266LL, 547665832LL, 109838563LL, 933245637LL, 724691727LL, 368925948LL, 268838846LL, 136026497LL, 112390913LL, 135498044LL, 217544623LL, 419363534LL, 500780548LL, 668123525LL, 128487469LL, 30977140LL, 522049725LL, 309058615LL, 386027524LL, 189239124LL, 148528617LL, 940567523LL, 917084264LL, 429277690LL, 996164327LL, 358655417LL, 568392357LL, 780072518LL, 462639908LL, 275105629LL, 909210595LL, 99199382LL, 703397904LL, 733333339LL, 97830135LL, 608823837LL, 256141983LL, 141827977LL, 696628828LL, 637939935LL, 811575797LL, 848924691LL, 131772368LL, 724464507LL, 272814771LL, 326159309LL, 456152084LL, 903466878LL, 92255682LL, 769795511LL, 373745190LL, 606241871LL, 825871994LL, 957939114LL, 435887178LL, 852304035LL, 663307737LL, 375297772LL, 217598709LL, 624148346LL, 671734977LL, 624500515LL, 748510389LL, 203191898LL, 423951674LL, 629786193LL, 672850561LL, 814362881LL, 823845496LL, 116667533LL, 256473217LL, 627655552LL, 245795606LL, 586445753LL, 172114298LL, 193781724LL, 778983779LL, 83868974LL, 315103615LL, 965785236LL, 492741665LL, 377329025LL, 847549272LL, 698611116LL };
-  if(n >= MOD) return 0;
-  ll fact = p[n / width];
-  REP(i, (n / width) * width + 1, n + 1) (fact *= i) %= MOD;
-  return fact;
-}
-
-/******************************/
-/* integer/modulo_inverse.cpp */
-/******************************/
-
-ll modulo_inverse(ll n) {
-  ll t = MOD - 2, p = 1, q = n;
-  while(t > 0) {
-    if(t % 2) p = (p * q) % MOD;
-    q = (q * q) % MOD;
-    t /= 2;
-  }
-  return p % MOD;
-}
-
-/****************************/
-/* integer/modulo_power.cpp */
-/****************************/
-
-ll modulo_power(ll a, ll n) {
-  if(n == 0) return 1;
-  if(n % 2 == 0) return modulo_power((a * a) % MOD, n / 2);
-  return (a * modulo_power(a, n - 1)) % MOD;
-}
-
-/********************************/
-/* integer/modulo_range_sum.cpp */
-/********************************/
-
-class ModuloRangeSum {
-private:
-  vector<ll> acc; /* acc[i] is sum of [0, i) where i in [0, size of vec] */
-
-publie:
-  ModuloRangeSum(const vector<ll> &vec): acc(vec.size() + 1, 0) {
-    REP(i, 0, vec.size()) acc[i + 1] = (acc[i] + vec[i]) % MOD;
-  }
-
-  ll operator()(ll l, ll r) { /* sum of [l, r) */
-    return (acc[r] - acc[l] + MOD) % MOD;
   }
 };
 
@@ -1159,68 +1211,6 @@ bool next_partial_permutation(BI first, BI middle, BI last) {
   reverse(middle, last);
   return next_permutation(first, last);
 }
-
-/****************************/
-/* integer/power_bigint.cpp */
-/****************************/
-
-/* calculate x ** d */
-ll power_bigint(ll x, string const &d) {
-  ll y = 1;
-  ll n = d.size();
-  for(ll i = d.size() - 1; i >= 0; i--) {
-    ll c = d[i] - '0';
-    ll z = 1;
-    REP(j, 0, 10) {
-      if(j == c) y = (y * z) % MOD;
-      z = (z * x) % MOD;
-    }
-    x = z;
-  }
-  return y;
-}
-
-/************************/
-/* integer/rational.cpp */
-/************************/
-
-class rational {
-  ll n, d;
-
-  static ll gcd(ll a, ll b) { return b != 0 ? gcd(b, a % b) : a; }
-
-public:
-  rational(): n(0), d(1) {}
-  rational(ll _n): n(_n), d(1) {}
-  rational(ll _n, ll _d) {
-    assert(_d != 0);
-    ll g = gcd(abs(_n), abs(_d));
-    n = _n / g * (_d / abs(_d));
-    d = abs(_d) / g;
-  }
-
-  bool operator==(rational r) const { return n * r.d == d * r.n; }
-  bool operator!=(rational r) const { return !(*this == r); }
-  bool operator<(rational r) const { return n * r.d < d * r.n; }
-  bool operator>(rational r) const { return n * r.d > d * r.n; }
-  bool operator<=(rational r) const { return *this == r || *this < r; }
-  bool operator>=(rational r) const { return *this == r || *this > r; }
-
-  rational operator+(rational r) const { return rational(n * r.d + d * r.n, d * r.d); }
-  rational operator-(rational r) const { return rational(n * r.d - d * r.n, d * r.d); }
-  rational operator*(rational r) const { return rational(n * r.n, d * r.d); }
-  rational operator/(rational r) const { return rational(n * r.d, d * r.n); }
-
-  rational operator+=(const rational &r) { return *this = *this + r; }
-  rational operator-=(const rational &r) { return *this = *this - r; }
-  rational operator*=(const rational &r) { return *this = *this * r; }
-  rational operator/=(const rational &r) { return *this = *this / r; }
-
-  explicit operator double() const { return (double) n / d; }
-
-  ll num() const { return n; }
-  ll den() const { return d; }
-};
 
 /*****************/
 /* math/dice.cpp */
@@ -1304,31 +1294,50 @@ template <typename T> T hungarian(const vector< vector<T> > &a, ll n) {
   return ret;
 }
 
-/***************************/
-/* matrix/matrix_power.cpp */
-/***************************/
+/********************/
+/* string/split.cpp */
+/********************/
 
-typedef vector<ll> vec;
-typedef vector<vec> mat;
+vector<string> split(string s, string p) {
+  vector<string> ret;
+  ll h = 0;
 
-mat mul(mat &A, mat &B) {
-  mat C(A.size(), vector<ll>(B[0].size()));
-  REP(i, 0, A.size())
-    REP(j, 0, B[0].size())
-      REP(k, 0, B.size())
-        C[i][j] = (C[i][j] + A[i][k] * B[k][j]) % MOD;
-  return C;
+  REP(i, 0, s.size() - p.size() + 1) if(s.substr(i, p.size()) == p) {
+    ret.push_back(s.substr(h, i - h));
+    h = i + p.size();
+    i += (ll) p.size() - 1;
+  }
+  ret.push_back(s.substr(h, (ll) s.size() - h));
+
+  return ret;
 }
 
-mat pow(mat A, ll n) {
-  mat B(A.size(), vec(A.size()));
-  REP(i, 0, A.size()) B[i][i] = 1;
-  while(n > 0) {
-    if(n & 1) B = mul(B, A);
-    A = mul(A, A);
-    n >>= 1;
+/***************************/
+/* string/suffix_array.cpp */
+/***************************/
+
+vector<ll> suffix_array(const string &S) {
+  ll n = S.length(), k = 1;
+  vector<ll> sa(n + 1), rnk(n + 1), tmp(n + 1);
+
+  auto compare_sa = [&](const ll& i, const ll& j) {
+    if(rnk[i] != rnk[j]) return rnk[i] < rnk[j];
+    ll ri = i + k <= n ? rnk[i + k] : -1;
+    ll rj = j + k <= n ? rnk[j + k] : -1;
+    return ri < rj;
+  };
+
+  REP(i, 0, n + 1) sa[i] = i;
+  REP(i, 0, n + 1) rnk[i] = i < n ? S[i] : -1;
+
+  for(; k <= n; k *= 2) {
+    sort(sa.begin(), sa.end(), compare_sa);
+    tmp[sa[0]] = 0;
+    REP(i, 1, n + 1) tmp[sa[i]] = tmp[sa[i - 1]] + (compare_sa(sa[i - 1], sa[i]) ? 1 : 0);
+    REP(i, 0, n + 1) rnk[i] = tmp[i];
   }
-  return B;
+
+  return sa;
 }
 
 /***************************/
@@ -1431,49 +1440,3 @@ public:
     return x1 * MOD2 + x2;
   }
 };
-
-/********************/
-/* string/split.cpp */
-/********************/
-
-vector<string> split(string s, string p) {
-  vector<string> ret;
-  ll h = 0;
-
-  REP(i, 0, s.size() - p.size() + 1) if(s.substr(i, p.size()) == p) {
-    ret.push_back(s.substr(h, i - h));
-    h = i + p.size();
-    i += (ll) p.size() - 1;
-  }
-  ret.push_back(s.substr(h, (ll) s.size() - h));
-
-  return ret;
-}
-
-/***************************/
-/* string/suffix_array.cpp */
-/***************************/
-
-vector<ll> suffix_array(const string &S) {
-  ll n = S.length(), k = 1;
-  vector<ll> sa(n + 1), rnk(n + 1), tmp(n + 1);
-
-  auto compare_sa = [&](const ll& i, const ll& j) {
-    if(rnk[i] != rnk[j]) return rnk[i] < rnk[j];
-    ll ri = i + k <= n ? rnk[i + k] : -1;
-    ll rj = j + k <= n ? rnk[j + k] : -1;
-    return ri < rj;
-  };
-
-  REP(i, 0, n + 1) sa[i] = i;
-  REP(i, 0, n + 1) rnk[i] = i < n ? S[i] : -1;
-
-  for(; k <= n; k *= 2) {
-    sort(sa.begin(), sa.end(), compare_sa);
-    tmp[sa[0]] = 0;
-    REP(i, 1, n + 1) tmp[sa[i]] = tmp[sa[i - 1]] + (compare_sa(sa[i - 1], sa[i]) ? 1 : 0);
-    REP(i, 0, n + 1) rnk[i] = tmp[i];
-  }
-
-  return sa;
-}
