@@ -30,22 +30,6 @@ public:
 };
 using Point2 = Vector2;
 
-class Line2 {
-public:
-  double a, b, c; // ax + by + c = 0
-
-  Line2(): a(0), b(0), c(0) {}
-  Line2(double a, double b, double c): a(a), b(b), c(c) {}
-  Line2(Point2 p, Point2 q): a(q.y - p.y), b(-(q.x - p.x)), c((q - p).det(p)) {}
-
-  Vector2 normal() { return Vector2(a, b); }
-  Vector2 direction() { return Vector2(-b, a); }
-
-  friend ostream& operator<<(ostream& out, const Line2& l) {
-    out << "(a = " << l.a << ", b = " << l.b << ", c = " << l.c << ")";
-  }
-};
-
 class LineSegment2 {
 public:
   Point2 l1, l2;
