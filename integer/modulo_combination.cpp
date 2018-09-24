@@ -26,20 +26,6 @@ public:
   }
 };
 
-class ModuloRangeSum {
-private:
-  vector<ll> acc;
-
-public:
-  ModuloRangeSum(const vector<ll> &vec): acc(vec.size() + 1, 0) {
-    REP(i, 0, vec.size()) acc[i + 1] = (acc[i] + vec[i]) % MOD;
-  }
-
-  ll operator()(ll l, ll r) {
-    return (acc[r + 1] - acc[l] + MOD) % MOD;
-  }
-};
-
 int main(void) {
   ModuloCombination comb(200000);
   assert(comb(200000, 100000) == 879467333LL);
