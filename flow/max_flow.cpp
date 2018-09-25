@@ -1,37 +1,35 @@
 #include <bits/stdc++.h>
-#define REP(i, a, n) for(ll i = ((ll) a); i < ((ll) n); i++)
 using namespace std;
-typedef long long ll;
 
 class MaxFlow {
 public:
-  struct edge { ll to, cap, rev; };
+  struct edge { int to, cap, rev; };
 
-  const ll INF = 1LL << 60;
-  ll N;
-  vector< vector<edge> > E;
+  const int INF = 1 << 28;
+  int N;
+  vector<vector<edge>> E;
   vector<bool> used;
 
-  MaxFlow(ll n): N(n), E(n), used(n) {};
+  MaxFlow(int N): N(N), E(N), used(N) {};
 
-  void add_directed_edge(ll from, ll to, ll cap) {
-    E[from].push_back((edge) { to, cap, (ll) E[to].size() });
-    E[to].push_back((edge) { from, 0, (ll) E[from].size() - 1 });
+  void add_directed_edge(int from, int to, int cap) {
+    E[from].push_back((edge) { to, cap, (int) E[to].size() });
+    E[to].push_back((edge) { from, 0, (int) E[from].size() - 1 });
   }
 
-  void add_undirected_edge(ll from, ll to, ll cap) {
-    E[from].push_back((edge) { to, cap, (ll) E[to].size() });
-    E[to].push_back((edge) { from, cap, (ll) E[from].size() - 1 });
+  void add_undirected_edge(int from, int to, int cap) {
+    E[from].push_back((edge) { to, cap, (int) E[to].size() });
+    E[to].push_back((edge) { from, cap, (int) E[from].size() - 1 });
   }
 
-  ll dfs(ll v, ll t, ll f) {
-    if(v == t) return f;
+  int dfs(int v, int t, int f) {
+    if (v == t) return f;
     used[v] = true;
-    REP(i, 0, E[v].size()) {
+    for (int i = 0; i < E[v].size(); i++) {
       edge &e = E[v][i];
-      if(!used[e.to] && e.cap > 0) {
-        ll d = dfs(e.to, t, min(f, e.cap));
-        if(d > 0) {
+      if (!used[e.to] && e.cap > 0) {
+        int d = dfs(e.to, t, min(f, e.cap));
+        if (d > 0) {
           e.cap -= d;
           E[e.to][e.rev].cap += d;
           return d;
@@ -41,12 +39,12 @@ public:
     return 0;
   }
 
-  ll max_flow(ll s, ll t) {
-    ll flow = 0;
-    while(1) {
-      REP(i, 0, N) used[i] = false;
-      ll f = dfs(s, t, INF);
-      if(f == 0 || f == INF) break;
+  int max_flow(int s, int t) {
+    int flow = 0;
+    while (1) {
+      for (int i = 0; i < N; i++) used[i] = false;
+      int f = dfs(s, t, INF);
+      if (f == 0 || f == INF) break;
       flow += f;
     }
     return flow;
